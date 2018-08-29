@@ -1,5 +1,5 @@
 # phonepe-js-sdk
 PhonePe's Your Store Public JS SDK
 
-#LICENSE 
+# LICENSE 
 All rights reserved by PhonePe Private Limited.
