@@ -1,0 +1,470 @@
+<!-- //Web::Jatin Remove the testing infra -->
+
+<!doctype html>
+<html>
+
+<head>
+    <h1 align="middle"> PhonePe Web SDK Test </h1>
+</head>
+
+<body>
+    <style>
+        button,
+        td,
+        input {
+            font-size: 30px;
+        }
+    </style>
+    <script src="./lib/bundle.js"></script>
+    <script>
+
+        function currentOS() {
+            return 'ios';
+            //return 'android';
+        }
+
+        function createuuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function transactionId() {
+            return this.createuuid()
+        }
+
+        function reservervationId() {
+            return this.createuuid()
+        }
+
+        function setData() {
+            //let os = (this.currentOS() === 'ios') ? PhonePe.Constants.OS.ios : PhonePe.Constants.OS.android
+            //console.log('Fetching OS dynamically = ' + os)
+            //console.log('Species = ' + PhonePe.Constants.Species.web)
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web).then((sdk) => {
+                let res = sdk.isMethodSupported('setItem')
+                console.log('setItem method supported = ' + res)
+                sdk.setItem('test', 'key', 'value')
+
+            })
+
+        }
+
+        function getData() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web).then((sdk) => {
+                let res = sdk.isMethodSupported('getItem')
+                console.log('getItem method supported = ' + res)
+                sdk.getItem('test', 'key', null).then((data) => {
+                    console.log("data received on js side = " + data)
+                }).catch((err) => {
+                    console.log("Error found = " + err)
+                })
+            })
+
+        }
+
+        function removeData() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('removeItem')
+                console.log('removeItem method supported = ' + res)
+                sdk.removeItem('test', 'key')
+            })
+
+        }
+
+        function startUpdatingLocation() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('startUpdatingLocation')
+                console.log('startUpdatingLocation method supported = ' + res)
+                sdk.startUpdatingLocation()
+            })
+
+        }
+
+        function stopUpdatingLocation() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('stopUpdatingLocation')
+                console.log('stopUpdatingLocation method supported = ' + res)
+                sdk.stopUpdatingLocation()
+            })
+
+        }
+
+        function registerLocationUpdateSuccessCallback() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+
+                sdk.registerLocationUpdateSuccessCallback('callbackName', (response) => {
+                    console.log('Location success response = ' + JSON.stringify(response))
+                })
+            })
+
+        }
+
+        function registerLocationUpdateFailureCallback() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                sdk.registerLocationUpdateFailureCallback('callbackName', (response) => {
+                    console.log('Location failure response = ' + JSON.stringify(response))
+                })
+            })
+
+        }
+
+        function getCurrentLocation() {
+            console.log('Trying to get current location')
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+
+                let res = sdk.isMethodSupported('getCurrentLocation')
+                console.log('getCurrentLocation method supported = ' + res)
+
+                sdk.getCurrentLocation().then((location) => {
+                    console.log("location received on js side = " + location)
+                }).catch((err) => {
+                    console.log("Error found when fetching location = " + err)
+                })
+            }).catch((err) => {
+                console.log('Error caught when initializing PhonePe = ' + err)
+            })
+
+        }
+
+        /**
+         * openTransactionDetailsPage(transactionId: string): Promise<any> | void {
+         }
+         **/
+
+        function navigateToTransactionDetails() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('openTransactionDetailsPage')
+                console.log('openTransactionDetailsPage method supported = ' + res)
+                sdk.openTransactionDetailsPage(this.transactionId())
+            })
+        }
+
+        function navigateToPayments() {
+
+            let merchantName = 'Ticket New'
+            let metadata = [{
+                "Movie Name": "Avengers"
+            }, {"Seats": "3A, 3B, 3C"}]
+            let timeoutInterval = 480000
+
+            let context = {
+                "merchantId": "TICKETNEWTEST",
+                "merchantTransactionId": "transactionId010",
+                "reservationId": "W1803281253545745701305",
+                "serviceCategory": "MOVIE",
+                "validFor": 86400,
+                "payableAmount": 5000,
+                "quantity": 2
+            }
+
+            /**
+             * openPaymentsPage(fallbackURL: string, merchantName: string, context: { [key: string]: any }, imageURL?: string, metaData?: { [key: string]: string }): Promise<any> | void {
+             }
+             * **/
+
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web).then((sdk) => {
+                let actionButtonProp = new PhonePe.PaymentModels.ActionButtonProp('Done')
+                let confirmationState = { [PhonePe.PaymentModels.TransactionState.COMPLETED] : actionButtonProp }
+                sdk.openPaymentsPage(merchantName, context, "", "", metadata, confirmationState).then((response) => {
+                    console.log("Payment was successful = " + response)
+                }).catch((err) => {
+                    console.log("Payment failed with error = " + err)
+                })
+            })
+
+        }
+
+        function navigateToHelpPage() {
+            let navigationRequest = new PhonePe.HelpPageNavigationRequest(this.transactionId())
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                sdk.navigateToPage(navigationRequest)
+            })
+
+        }
+
+        function getUserDetails() {
+
+            let email = PhonePe.Constants.UserDetail.email
+            let phoneNumber = PhonePe.Constants.UserDetail.phoneNumber
+            let isEmailVerified = PhonePe.Constants.UserDetail.isEmailVerified
+            let name = PhonePe.Constants.UserDetail.name
+
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+
+                let res = sdk.isMethodSupported('getUserDetails')
+                console.log('getUserDetails method supported = ' + res)
+
+                sdk.getUserDetails([email, phoneNumber, isEmailVerified, name]).then((user) => {
+                    console.log("user data received on js = " + JSON.stringify(user))
+                }).catch((err) => {
+                    console.log("Error found when fetching user = " + err)
+                })
+            })
+
+        }
+
+        function getSupportedWebSDKVersion() {
+            PhonePe.PhonePe.build(PhonePe.Constants.Species.web, this.currentOS()).then((sdk) => {
+                sdk.isMethodSupported('getUserDetails')
+            })
+        }
+
+        function seekPermission() {
+            let env = PhonePe.Constants.Species.web
+            let readsms = PhonePe.Constants.Permission.READ_SMS
+            let location = PhonePe.Constants.Permission.LOCATION
+
+            PhonePe.PhonePe.build(env, this.currentOS()).then((sdk) => {
+
+                let res = sdk.isMethodSupported('seekPermission')
+                console.log('seekPermission method supported = ' + res)
+
+                sdk.seekPermission([readsms, location]).then((data) => {
+                    console.log('Successfully got permission for readsms')
+                })
+            }).catch((err) => {
+                console.log('Failed to fetch permission with error = ' + err)
+            })
+        }
+
+        function openSettingsPage() {
+            let env = PhonePe.Constants.Species.web
+            let readsms = PhonePe.Constants.Permission.READ_SMS
+            let location = PhonePe.Constants.Permission.LOCATION
+
+            PhonePe.PhonePe.build(env, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('openSettingsPageForPermission')
+                console.log('openSettingsPageForPermission method supported = ' + res)
+
+                sdk.openSettingsPageForPermission().then(() => {
+                    console.log('Successfully opened settings page')
+                })
+            }).catch((err) => {
+                console.log('Failed to open settings page with error = ' + err)
+            })
+        }
+
+        function scanQRCode() {
+            let env = PhonePe.Constants.Species.web
+            let readsms = PhonePe.Constants.Permission.READ_SMS
+            let location = PhonePe.Constants.Permission.LOCATION
+
+            PhonePe.PhonePe.build(env, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('scanQRCode')
+                console.log('scanQRCode method supported = ' + res)
+
+                sdk.scanQRCode(true).then((res) => {
+                    alert(JSON.stringify(res))
+                }).catch((error) => {
+                    alert(JSON.stringify(error))
+                })
+            }).catch((err) => {
+                console.log('Failed to open settings page with error = ' + err)
+            })
+        }
+
+        function startCamera() {
+            let env = PhonePe.Constants.Species.web
+            let readsms = PhonePe.Constants.Permission.READ_SMS
+            let location = PhonePe.Constants.Permission.LOCATION
+
+            PhonePe.PhonePe.build(env, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('startCamera')
+                console.log('startCamera method supported = ' + res)
+
+                sdk.startCamera().then((res) => {
+                    console.log('Camera Result:' + JSON.stringify(res))
+                    try {
+                        res = JSON.stringify(res)
+                    } finally {
+                        alert(res)
+                    }
+
+                }).catch((error) => {
+                    console.log('Camera Result:' + JSON.stringify(error))
+                    try {
+                        error = JSON.stringify(error)
+                    } finally {
+                        alert(error)
+                    }
+                    console.log('Camera Error:' + JSON.stringify(res))
+                })
+            }).catch((err) => {
+                console.log('Failed to open settings page with error = ' + err)
+            })
+        }
+
+        function logMerchantEvent() {
+
+            let env = PhonePe.Constants.Species.web
+            PhonePe.PhonePe.build(env, this.currentOS()).then((sdk) => {
+                let res = sdk.isMethodSupported('logMerchantEvent')
+                console.log('logMerchantEvent method supported = ' + res)
+
+                let name = 'Test'
+                let metadata = { 'key': 'value' }
+
+                sdk.logMerchantEvent(name, metadata).then(() => {
+                    console.log('Successfully sent event with name = ' + name)
+                })
+            }).catch((err) => {
+                console.log('Failed to send event with error = ' + err)
+            })
+
+        }
+
+        function replace() {
+
+            console.log('Using Replace state');
+
+            if (history.replaceState) {
+                history.replaceState(null, "Page", "test.html");
+                history.go(0);
+            } else {
+                location.replace(url);
+            }
+
+            // if(!!(window.history && history.replaceState)){
+            //     console.log('Using Replace state inside');
+            //     console.log('History before = ' + window.history);
+            //     window.history.replaceState({}, document.title, "test.html");
+            //     console.log('History after = ' + window.history);
+            // } else {
+            //     location.replace("test.html");
+            // }
+
+            // document.location.replace('test.html')
+        }
+
+        function setCookie() {
+            console.log('Testing set cookie')
+            document.cookie = 'test1=test1'
+        }
+
+        function getCookie() {
+            alert(document.cookie)
+        }
+
+    </script>
+    <table align="middle" cellspacing="10">
+        <tr>
+            <td>
+                <input id="clickMe" type="button" value="setData" onclick="console.log('setData pressed');setData();" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe2" type="button" value="getData" onclick="console.log('getData pressed');getData();" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe3" type="button" value="removeData" onclick="console.log('removeData pressed');removeData();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe4" type="button" value="getCurrentLocation" onclick="console.log('getLocation pressed');getCurrentLocation();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe7" type="button" value="startUpdatingLocation" onclick="console.log('startUpdatingLocation pressed');startUpdatingLocation();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe8" type="button" value="stopUpdatingLocation" onclick="console.log('stopUpdatingLocation pressed');stopUpdatingLocation();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe9" type="button" value="registerLocationUpdateSuccessCallback" onclick="console.log('registerLocationUpdateSuccessCallback pressed');registerLocationUpdateSuccessCallback();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe10" type="button" value="registerLocationUpdateFailureCallback" onclick="console.log('registerLocationUpdateFailureCallback pressed');registerLocationUpdateFailureCallback();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe11" type="button" value="navigateToPayments" onclick="console.log('navigateToPayments pressed');navigateToPayments();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe12" type="button" value="navigateToHelpPage" onclick="console.log('navigateToHelpPage pressed');navigateToHelpPage();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe5" type="button" value="navigateToTransactionDetails" onclick="console.log('navigateToTransactionDetails pressed');navigateToTransactionDetails();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe6" type="button" value="getUserDetails" onclick="console.log('getUserDetails pressed');getUserDetails();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe13" type="button" value="getSupportedWebSDKVersion" onclick="console.log('getSupportedWebSDKVersion pressed');getSupportedWebSDKVersion();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe14" type="button" value="seekPermission" onclick="console.log('seekPermission pressed');seekPermission();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe14" type="button" value="openSettingsPage" onclick="console.log('openSettingsPage pressed');openSettingsPage();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe15" type="button" value="logMerchantEvent" onclick="console.log('logMerchantEvent pressed');logMerchantEvent();"
+                    </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe16" type="button" value="replace" onclick="console.log('replace pressed');replace();" </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe17" type="button" value="TEST" onclick="console.log('replace pressed');replace();" </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe18" type="button" value="setCookie" onclick="console.log('setCookie pressed');setCookie();" </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe19" type="button" value="getCookie" onclick="console.log('getCookie pressed');getCookie();" ></td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe14" type="button" value="scanQRCode" onclick="console.log('scanQRCode pressed');scanQRCode();"></td>
+        </tr>
+        <tr>
+            <td>
+                <input id="clickMe14" type="button" value="startCamera" onclick="console.log('startCamera pressed');startCamera();">
+            </td>
+        </tr>
+        <tr>
+            <td><p>+919711165687</p></td>
+        </tr>
+        <tr>
+            <td><p>jatinarora269@gmail.com</p></td>
+        </tr>
+        <tr>
+            <td><p>On 4th July, 2019</p></td>
+        </tr>
+    </table>
+    <a href="tel:9711165687">61709</a>
+</body>
+
+</html>
