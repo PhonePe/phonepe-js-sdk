@@ -1,0 +1,66 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Generate JS Modules
+        run: |
+          # 1. Generate CommonJS file (index.cjs)
+          cat bundle.js > index.cjs
+          echo -e "\nmodule.exports = PhonePe;" >> index.cjs
+
+          # 2. Generate ES Module file (index.mjs)
+          cat bundle.js > index.mjs
+          echo -e "\nexport default PhonePe;" >> index.mjs
+
+      - name: Generate package.json
+        run: |
+          # Extract version from GitHub release tag (e.g., 'v1.2.3' becomes '1.2.3')
+          VERSION=${GITHUB_REF_NAME#v}
+          
+          # Dynamically create the package.json file
+          cat <<EOF > package.json
+          {
+            "name": "@phonepe-limited-official/phonepe-js-sdk",
+            "version": "$VERSION",
+            "description": "PhonePe JS SDK",
+            "main": "index.cjs",
+            "module": "index.mjs",
+            "unpkg": "bundle.js",
+            "exports": {
+              ".": {
+                "import": "./index.mjs",
+                "require": "./index.cjs",
+                "default": "./bundle.js"
+              }
+            },
+            "files": [
+              "bundle.js",
+              "index.cjs",
+              "index.mjs",
+              "README.md"
+            ]
+          }
+          EOF
+
+      - name: Publish package to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_PUBLISH_TOKEN }}
